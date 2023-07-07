@@ -139,7 +139,7 @@ def get_args_parser():
 
 def main(args):
     print(args.dataset_file, 11111111)
-    if args.dataset_file == "vid_single":
+    if args.dataset_file == "coco":
         from engine_single import evaluate, train_one_epoch
         import util.misc as utils
         
