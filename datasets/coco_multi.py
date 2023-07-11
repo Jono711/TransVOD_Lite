@@ -207,7 +207,8 @@ def make_coco_transforms(image_set):
 
     scales = [480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800]
 
-    if image_set == 'train_vid' or image_set == "train_det" or image_set == "train_joint":
+    #if image_set == 'train_vid' or image_set == "train_det" or image_set == "train_joint":
+    if image_set == "train":
         return T.Compose([
             T.RandomHorizontalFlip(),
             T.RandomResize([600], max_size=1000),
@@ -224,7 +225,7 @@ def make_coco_transforms(image_set):
 
 
 def build(image_set, args):
-    root = Path(args.vid_path)
+    root = Path(args.coco_path)
     assert root.exists(), f'provided COCO path {root} does not exist'
     #mode = 'instances'
     PATHS = {

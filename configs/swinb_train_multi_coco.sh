@@ -22,3 +22,5 @@ python -u main.py \
     --resume '/content/drive/MyDrive/TransVOD/singleframebaseline.pth' \
     --output_dir ${EXP_DIR} \
     ${PY_ARGS} 2>&1 | tee ${EXP_DIR}/log.train.$T
+
+# Num frames = 4 (see coco multi)

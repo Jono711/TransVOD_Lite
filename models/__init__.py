@@ -17,6 +17,10 @@ def build_model(args):
         return build_multi(args)
     elif args.dataset_file == "vid_multi_eval":
         return build_multi(args)
+    elif args.dataset_file == "coco_multi":
+        return build_multi(args)
+    elif args.dataset_file == "coco_multi_eval":
+        return build_multi(args)
     else: # args.dataset_file == "vid_single":
         return build_single(args)
 
