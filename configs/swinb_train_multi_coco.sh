@@ -18,6 +18,7 @@ python -u main.py \
     --num_workers 8 \
     --with_box_refine \
     --dataset_file 'coco_multi' \
-    --resume exps/our_models/exps_single/swinb_88.3/checkpoint0006.pth \
+    --coco_path '/content/drive/MyDrive/YOLOv5 (1)/datasets/Trans_VOD_Lite_Worms/' \
+    --resume '/content/drive/MyDrive/TransVOD/singleframebaseline.pth' \
     --output_dir ${EXP_DIR} \
     ${PY_ARGS} 2>&1 | tee ${EXP_DIR}/log.train.$T
