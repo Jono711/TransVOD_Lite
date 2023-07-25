@@ -15,7 +15,7 @@ import math
 import os
 import sys
 from typing import Iterable
-
+import cv2
 import torch
 import util.misc as utils
 from util import box_ops
@@ -274,10 +274,11 @@ def evaluate1(model, criterion, postprocessors, data_loader, base_ds, device, ou
         stats['PQ_st'] = panoptic_res["Stuff"]
     return stats, coco_evaluator
 
-
-def evaluate_whole_video(model: torch.nn.Module, criterion: torch.nn.Module,
-                    data_loader: Iterable, optimizer: torch.optim.Optimizer,
-                    device: torch.device, epoch: int, max_norm: float = 0):
+@torch.no_grad()
+def evaluate_whole_video(model: torch.nn.Module,
+                    data_loader: Iterable,
+                    device: torch.device,
+                    output_dir: str, max_norm: float = 0):
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Evaluate video'
@@ -290,26 +291,43 @@ def evaluate_whole_video(model: torch.nn.Module, criterion: torch.nn.Module,
         # outputs = model(samples)
         samples = samples.to(device)
         #print("engine_target_shape",targets)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets[0]]
+        #targets = [{k: v.to(device) for k, v in t.items()} for t in targets[0]]
+        targets = [{k: v for k, v in t.items()} for t in targets[0]]
+        
         # print("targets", targets)
         # print("input model", type(samples))
         outputs = model(samples)
 
-        for i in range(outputs['pred_logits'].shape[0]):
-            img_id = targets[i]['image_id']
-            #img_name = ""
-            #image = cv2.imread()
-            for j in range(outputs['pred_logits'].shape[1]):
-                if (outputs['pred_logits'][i][j][1] > 0):
-                    bbox = outputs['pred_boxes'][i][j]
-                    bbox_xyxy = box_ops.box_cxcywh_to_xyxy(bbox * torch.tensor([w,h,w,h], dtype=torch.float32).to(device))
-                    start_pt = (int(bbox_xyxy[0]), int(bbox_xyxy[1]))
-                    end_pt = (int(bbox_xyxy[2]), int(bbox_xyxy[3]))
-                    image = cv2.rectangle(image, start_pt, end_pt, pred_bbox_color, 2)
-                    cv2.imwrite(path_to_save_imgs+img_name, image)
+        # for i in range(outputs['pred_logits'].shape[0]):
+        # start tab -
+        i = 0
+        path = targets[i]['path']
+        img_name = path.split('/')[-1]
+
+        image = cv2.imread(path)
+        (h, w) = image.shape[:2]
+        print(path)
+        for j in range(outputs['pred_logits'].shape[1]):
+            obj_class = torch.argmax(outputs['pred_logits'][i][j])
+            if obj_class == 15:
+              pred_bbox_color = (0,0,255)
+            elif obj_class == 16:
+              pred_bbox_color = (0,0,0)
+            else:
+              pred_bbox_color = (255,255,255)
+            
+            bbox = outputs['pred_boxes'][i][j]
+            bbox_xyxy = box_ops.box_cxcywh_to_xyxy(bbox * torch.tensor([w,h,w,h], dtype=torch.float32).to(device))
+            #bbox_xyxy = box_ops.box_cxcywh_to_xyxy(bbox * torch.tensor([h,w,h,w], dtype=torch.float32).to(device))
+            start_pt = (int(bbox_xyxy[0]), int(bbox_xyxy[1]))
+            end_pt = (int(bbox_xyxy[2]), int(bbox_xyxy[3]))
+            image = cv2.rectangle(image, start_pt, end_pt, pred_bbox_color, 2)
+        cv2.imwrite(output_dir + '/' + img_name, image)
+
+        # - end tab
 
         all_outputs.append(outputs)
 
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
-    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    return all_outputs

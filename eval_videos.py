@@ -267,10 +267,10 @@ def main(args):
             else:
                 tmp_dict = checkpoint['model']
                 for name, param in model_without_ddp.named_parameters():
-	                if ('temp' in name):
-	                    param.requires_grad = True
-	                else:
-	                    param.requires_grad = False
+                    if ('temp' in name):
+                        param.requires_grad = True
+                    else:
+                        param.requires_grad = False
             missing_keys, unexpected_keys = model_without_ddp.load_state_dict(tmp_dict, strict=False)
 
         unexpected_keys = [k for k in unexpected_keys if not (k.endswith('total_params') or k.endswith('total_ops'))]
@@ -288,8 +288,9 @@ def main(args):
     print("Start evaluating")
     start_time = time.time()
 
-    outputs = evaluate_whole_video(model, criterion, data_loader_val, optimizer, device, epoch, args.clip_max_norm)
+    outputs = evaluate_whole_video(model, data_loader_val, device, args.output_dir, args.clip_max_norm)
 
+    print(outputs)
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Evaluation time {}'.format(total_time_str))

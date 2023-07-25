@@ -13,7 +13,7 @@ python -u main.py \
     --num_queries 100 \
     --dilation \
     --batch_size 1 \
-    --num_frames 12 \
+    --num_frames 4 \
     --hidden_dim 256 \
     --num_workers 8 \
     --with_box_refine \

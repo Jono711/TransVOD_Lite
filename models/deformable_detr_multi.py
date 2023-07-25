@@ -69,12 +69,14 @@ class DeformableDETR(nn.Module):
                 in_channels = backbone.num_channels[_]
                 input_proj_list.append(nn.Sequential(
                     nn.Conv2d(in_channels, hidden_dim, kernel_size=1),
-                    nn.GroupNorm(32, hidden_dim),
+                    #nn.GroupNorm(32, hidden_dim),
+                    nn.GroupNorm(3, hidden_dim),
                 ))
             for _ in range(num_feature_levels - num_backbone_outs):
                 input_proj_list.append(nn.Sequential(
                     nn.Conv2d(in_channels, hidden_dim, kernel_size=3, stride=2, padding=1),
-                    nn.GroupNorm(32, hidden_dim),
+                    #nn.GroupNorm(32, hidden_dim),
+                    nn.GroupNorm(3, hidden_dim),
                 ))
                 in_channels = hidden_dim
             self.input_proj = nn.ModuleList(input_proj_list)
@@ -87,7 +89,8 @@ class DeformableDETR(nn.Module):
             self.input_proj = nn.ModuleList([
                 nn.Sequential(
                     nn.Conv2d(hidden_dim, hidden_dim, kernel_size=1),
-                    nn.GroupNorm(32, hidden_dim),
+                    #nn.GroupNorm(32, hidden_dim),
+                    nn.GroupNorm(3, hidden_dim),
                 )])
         self.backbone = backbone
         self.aux_loss = aux_loss
@@ -464,7 +467,8 @@ class MLP(nn.Module):
 
 
 def build(args):
-    num_classes = 31
+    #num_classes = 31
+    num_classes = 3
     device = torch.device(args.device)
 
     if 'swin' in args.backbone:

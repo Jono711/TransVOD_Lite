@@ -31,6 +31,7 @@ class CocoDetection(TvCocoDetection):
         is_train = True,  filter_key_img=True,  cache_mode=False, local_rank=0, local_size=1):
         super(CocoDetection, self).__init__(img_folder, ann_file,
                                             cache_mode=cache_mode, local_rank=local_rank, local_size=local_size)
+        self.img_folder = img_folder
         self._transforms = transforms
         self.prepare = ConvertCocoPolysToMask(return_masks)
         # self.prepare_seq = ConvertCocoSeqPolysToMask(return_masks)
@@ -59,7 +60,7 @@ class CocoDetection(TvCocoDetection):
         path = img_info['file_name']
         video_id = img_info['video_id']
         img = self.get_image(path)
-        target = {'image_id': img_id,'video_id': video_id, 'annotations': target}
+        target = {'image_id': img_id,'video_id': video_id, 'annotations': target, 'path': str(self.img_folder) + "/" + path}
         img, target = self.prepare(img, target)
         imgs.append(img)
         tgts.append(target)
@@ -88,7 +89,8 @@ class CocoDetection(TvCocoDetection):
                 #print("------------------------------")i
                 ref_img_ids = []
                 Len = len(img_ids)
-                interval  = max(int(Len // 15), 1)  #
+                #interval  = max(int(Len // 15), 1)  #
+                interval = 1
                 left_indexs = int((img_id - img_ids[0]) // interval)
                 right_indexs = int((img_ids[-1] - img_id) // interval)
                 if left_indexs < self.num_ref_frames:
@@ -96,7 +98,7 @@ class CocoDetection(TvCocoDetection):
                        ref_img_ids.append(min(img_id + (i+1)*interval, img_ids[-1]))
                 else:
                    for i in range(self.num_ref_frames):
-                       ref_img_ids.append(max(img_id - (i+1)* interval, img_ids[0]))
+                       ref_img_ids.append(max(img_id - (i+1)*interval, img_ids[0]))
 
                 # print("ref_img_ids", ref_img_ids)
             for ref_img_id in ref_img_ids:
@@ -105,7 +107,7 @@ class CocoDetection(TvCocoDetection):
                 ref_img_path = ref_img_info['file_name']
                 ref_img = self.get_image(ref_img_path)
                 ref_target = coco.loadAnns(ref_ann_ids)
-                ref_target = {'image_id': ref_img_id, 'video_id': video_id, 'annotations': ref_target}
+                ref_target = {'image_id': ref_img_id, 'video_id': video_id, 'annotations': ref_target, 'path': str(self.img_folder) + "/" + ref_img_path}
                 ref_img, ref_target = self.prepare(ref_img, ref_target)
                 imgs.append(ref_img)
                 tgts.append(ref_target)
@@ -142,6 +144,7 @@ class ConvertCocoPolysToMask(object):
 
         image_id = target["image_id"]
         image_id = torch.tensor([image_id])
+        image_path = target["path"]
 
         anno = target["annotations"]
 
@@ -178,6 +181,7 @@ class ConvertCocoPolysToMask(object):
             keypoints = keypoints[keep]
 
         target = {}
+        target["path"] = image_path
         target["boxes"] = boxes
         target["labels"] = classes
         if self.return_masks:
@@ -205,12 +209,12 @@ def make_coco_transforms(image_set):
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    scales = [480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800]
+    #scales = [480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800]
 
     #if image_set == 'train_vid' or image_set == "train_det" or image_set == "train_joint":
     if image_set == "train":
         return T.Compose([
-            T.RandomHorizontalFlip(),
+            #T.RandomHorizontalFlip(),
             T.RandomResize([600], max_size=1000),
             normalize,
         ])
@@ -240,7 +244,7 @@ def build(image_set, args):
     #}
     datasets = []
     for (img_folder, ann_file) in PATHS[image_set]:
-        dataset = CocoDetection(img_folder, ann_file, transforms=None, is_train =(not args.eval), return_masks=args.masks, cache_mode=args.cache_mode, local_rank=get_local_rank(), local_size=get_local_size(), num_frames=args.num_frames)
+        dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), is_train =(not args.eval), return_masks=args.masks, cache_mode=args.cache_mode, local_rank=get_local_rank(), local_size=get_local_size(), num_frames=args.num_frames)
         datasets.append(dataset)
     if len(datasets) == 1:
         return datasets[0]
