@@ -12,6 +12,7 @@ from .torchvision_datasets import CocoDetection
 
 from .coco import build as build_coco
 from .coco_multi import build as build_coco_multi
+from .coco_multi_eval import build as build_coco_multi_eval
 from .vid_multi import build as build_vid_multi
 from .vid_single import build as build_vid_single
 from .vid_multi_eval import build as build_vid_multi_eval
@@ -32,6 +33,8 @@ def build_dataset(image_set, args):
         return build_coco(image_set, args)
     if args.dataset_file == 'coco_multi':
         return build_coco_multi(image_set, args)
+    if args.dataset_file == 'coco_multi_eval':
+        return build_coco_multi_eval(image_set, args)
     if args.dataset_file == 'coco_panoptic':
         # to avoid making panopticapi required for coco
         from .coco_panoptic import build as build_coco_panoptic

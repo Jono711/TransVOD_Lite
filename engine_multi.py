@@ -18,6 +18,7 @@ from typing import Iterable
 
 import torch
 import util.misc as utils
+from util import box_ops
 from datasets.coco_eval import CocoEvaluator
 from datasets.panoptic_eval import PanopticEvaluator
 from datasets.data_prefetcher_multi import data_prefetcher
@@ -272,3 +273,43 @@ def evaluate1(model, criterion, postprocessors, data_loader, base_ds, device, ou
         stats['PQ_th'] = panoptic_res["Things"]
         stats['PQ_st'] = panoptic_res["Stuff"]
     return stats, coco_evaluator
+
+
+def evaluate_whole_video(model: torch.nn.Module, criterion: torch.nn.Module,
+                    data_loader: Iterable, optimizer: torch.optim.Optimizer,
+                    device: torch.device, epoch: int, max_norm: float = 0):
+
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Evaluate video'
+    print_freq = 10
+
+    all_outputs = []
+    for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+
+        # assert samples is None, samples
+        # outputs = model(samples)
+        samples = samples.to(device)
+        #print("engine_target_shape",targets)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets[0]]
+        # print("targets", targets)
+        # print("input model", type(samples))
+        outputs = model(samples)
+
+        for i in range(outputs['pred_logits'].shape[0]):
+            img_id = targets[i]['image_id']
+            #img_name = ""
+            #image = cv2.imread()
+            for j in range(outputs['pred_logits'].shape[1]):
+                if (outputs['pred_logits'][i][j][1] > 0):
+                    bbox = outputs['pred_boxes'][i][j]
+                    bbox_xyxy = box_ops.box_cxcywh_to_xyxy(bbox * torch.tensor([w,h,w,h], dtype=torch.float32).to(device))
+                    start_pt = (int(bbox_xyxy[0]), int(bbox_xyxy[1]))
+                    end_pt = (int(bbox_xyxy[2]), int(bbox_xyxy[3]))
+                    image = cv2.rectangle(image, start_pt, end_pt, pred_bbox_color, 2)
+                    cv2.imwrite(path_to_save_imgs+img_name, image)
+
+        all_outputs.append(outputs)
+
+    metric_logger.synchronize_between_processes()
+    print("Averaged stats:", metric_logger)
+    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

@@ -144,7 +144,7 @@ def main(args):
         import util.misc as utils
         
     else:
-        from engine_multi import evaluate, train_one_epoch
+        from engine_multi import evaluate_whole_video, train_one_epoch
         import util.misc_multi as utils
 
     print(args.dataset_file)
@@ -278,53 +278,21 @@ def main(args):
             print('Missing Keys: {}'.format(missing_keys))
         if len(unexpected_keys) > 0:
             print('Unexpected Keys: {}'.format(unexpected_keys))
-    if args.eval:
-        test_stats, coco_evaluator = evaluate(model, criterion, postprocessors,
-                                              data_loader_val, base_ds, device, args.output_dir)
-        if args.output_dir:
-            utils.save_on_master(coco_evaluator.coco_eval["bbox"].eval, output_dir / "eval.pth")
-        return
+    #if args.eval:
+    #    test_stats, coco_evaluator = evaluate(model, criterion, postprocessors,
+    #                                          data_loader_val, base_ds, device, args.output_dir)
+    #    if args.output_dir:
+    #        utils.save_on_master(coco_evaluator.coco_eval["bbox"].eval, output_dir / "eval.pth")
+    #    return
 
-    print("Start training")
+    print("Start evaluating")
     start_time = time.time()
-    for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed:
-            sampler_train.set_epoch(epoch)
-        train_stats = train_one_epoch(
-            model, criterion, data_loader_train, optimizer, device, epoch, args.clip_max_norm)
-        lr_scheduler.step()
-        print('args.output_dir', args.output_dir)
-        if args.output_dir:
-            checkpoint_paths = [output_dir / 'checkpoint.pth']
-            # extra checkpoint before LR drop and every 5 epochs
-            # if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % 1 == 0:
-            # if (epoch + 1) % 1 == 0:
-            if (epoch + 1) % 5 == 0:
-                checkpoint_paths.append(output_dir / f'checkpoint{epoch:04}.pth')
-            for checkpoint_path in checkpoint_paths:
-                utils.save_on_master({
-                    'model': model_without_ddp.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'lr_scheduler': lr_scheduler.state_dict(),
-                    'epoch': epoch,
-                    'args': args,
-                }, checkpoint_path)
 
-        #test_stats, coco_evaluator = evaluate(
-         #   model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
-        #)
-
-        log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                     'epoch': epoch,
-                     'n_parameters': n_parameters}
-
-        if args.output_dir and utils.is_main_process():
-            with (output_dir / "log.txt").open("a") as f:
-                f.write(json.dumps(log_stats) + "\n")
+    outputs = evaluate_whole_video(model, criterion, data_loader_val, optimizer, device, epoch, args.clip_max_norm)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print('Training time {}'.format(total_time_str))
+    print('Evaluation time {}'.format(total_time_str))
 
 
 if __name__ == '__main__':
