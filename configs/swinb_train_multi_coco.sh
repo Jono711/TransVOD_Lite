@@ -8,9 +8,11 @@ mkdir -r ${EXP_DIR}
 PY_ARGS=${@:1}
 python -u main.py \
     --backbone swin_b_p4w7 \
-    --epochs 30 \
+    --epochs 100 \
     --num_feature_levels 1 \
     --num_queries 100 \
+    --lr_drop_epochs 10 20 35 50 75 \
+    --lr 1e-4 \
     --dilation \
     --batch_size 1 \
     --num_frames 4 \
