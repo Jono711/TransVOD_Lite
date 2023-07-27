@@ -71,7 +71,7 @@ class CocoDetection(TvCocoDetection):
             img_ids = self.cocovid.get_img_ids_from_vid(video_id) 
             #print("length", len(img_ids))
             ref_img_ids = []
-            if self.is_train:
+            if self.is_train and False:
                 interval = 5 # *20
                 left = max(img_ids[0], img_id - interval)
                 right = min(img_ids[-1], img_id + interval)
@@ -88,7 +88,8 @@ class CocoDetection(TvCocoDetection):
                 #print("------------------------------")i
                 ref_img_ids = []
                 Len = len(img_ids)
-                interval  = max(int(Len // 15), 1)  #
+                #interval  = max(int(Len // 15), 1) #
+                interval  = 1 
                 left_indexs = int((img_id - img_ids[0]) // interval)
                 right_indexs = int((img_ids[-1] - img_id) // interval)
                 if left_indexs < self.num_ref_frames:
