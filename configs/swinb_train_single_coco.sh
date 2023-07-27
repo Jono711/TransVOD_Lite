@@ -10,7 +10,7 @@ python -u main.py \
     --backbone swin_b_p4w7 \
     --epochs 100 \
     --lr_drop_epochs 10 50 \
-    --lr 2e-4 \
+    --lr 2e-3 \
     --num_feature_levels 1 \
     --num_queries 100 \
     --dilation \

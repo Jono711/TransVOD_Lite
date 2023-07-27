@@ -309,9 +309,9 @@ def evaluate_whole_video(model: torch.nn.Module,
         print(path)
         for j in range(outputs['pred_logits'].shape[1]):
             obj_class = torch.argmax(outputs['pred_logits'][i][j])
-            if obj_class == 15:
+            if obj_class == 1:
               pred_bbox_color = (0,0,255)
-            elif obj_class == 16:
+            elif obj_class == 2:
               pred_bbox_color = (0,0,0)
             else:
               pred_bbox_color = (255,255,255)

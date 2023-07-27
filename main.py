@@ -229,7 +229,7 @@ def main(args):
         optimizer = torch.optim.AdamW(param_dicts, lr=args.lr,
                                       weight_decay=args.weight_decay)
     print(args.lr_drop_epochs)
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, args.lr_drop_epochs)
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, args.lr_drop_epochs) #, gamma=0.5)
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
@@ -267,10 +267,10 @@ def main(args):
             else:
                 tmp_dict = checkpoint['model']
                 for name, param in model_without_ddp.named_parameters():
-	                if ('temp' in name):
-	                    param.requires_grad = True
-	                else:
-	                    param.requires_grad = False
+                    if ('temp' in name):
+                        param.requires_grad = True
+                    else:
+                        param.requires_grad = False
             missing_keys, unexpected_keys = model_without_ddp.load_state_dict(tmp_dict, strict=False)
 
         unexpected_keys = [k for k in unexpected_keys if not (k.endswith('total_params') or k.endswith('total_ops'))]
@@ -310,11 +310,11 @@ def main(args):
                     'args': args,
                 }, checkpoint_path)
 
-        #test_stats, coco_evaluator = evaluate(
-         #   model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
-        #)
+        test_stats, coco_evaluator = evaluate(
+            model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
+        )
 
-        log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+        log_stats = {**{f'test_{k}': v for k, v in test_stats.items()},
                      'epoch': epoch,
                      'n_parameters': n_parameters}
 

@@ -17,7 +17,9 @@ import sys
 from typing import Iterable
 
 import torch
+import cv2
 import util.misc as utils
+from util import box_ops
 from datasets.coco_eval import CocoEvaluator
 from datasets.panoptic_eval import PanopticEvaluator
 from datasets.data_prefetcher_single import data_prefetcher
@@ -34,12 +36,51 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 10
     print("------------------------------------------------------!!!!")
-    prefetcher = data_prefetcher(data_loader, device, prefetch=True)
-    samples, targets = prefetcher.next()
+    #prefetcher = data_prefetcher(data_loader, device, prefetch=True)
+    #samples, targets = prefetcher.next()
     # print("samples", prefecher.next()
+    index = 0
+    for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+    # for _ in metric_logger.log_every(range(len(data_loader)), print_freq, header):
+      
+        samples = samples.to(device)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-    # for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
-    for _ in metric_logger.log_every(range(len(data_loader)), print_freq, header):
+        '''
+        print(targets)
+        print(samples)
+        print(samples.tensors[0].shape)
+        
+        image = inverse_normalize(samples.tensors[0], (0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        #image = samples.tensors[0]
+        image = image.permute(1, 2, 0)
+        image = image.cpu().numpy()
+        image = image * 255
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.imread(image)
+        print(image)
+        print(type(image))
+        (h, w) = image.shape[:2]
+        bboxes = targets[0]["boxes"]
+        for j in range(bboxes.shape[0]):
+            obj_class = targets[0]["labels"][j]
+            if obj_class == 1:
+              pred_bbox_color = (0,0,255)
+            elif obj_class == 2:
+              pred_bbox_color = (0,0,0)
+            else:
+              pred_bbox_color = (255,255,255)
+            
+            bbox = bboxes[j]
+            bbox_xyxy = box_ops.box_cxcywh_to_xyxy(bbox * torch.tensor([w,h,w,h], dtype=torch.float32).to(device))
+            
+            start_pt = (int(bbox_xyxy[0]), int(bbox_xyxy[1]))
+            end_pt = (int(bbox_xyxy[2]), int(bbox_xyxy[3]))
+            image = cv2.rectangle(image, start_pt, end_pt, pred_bbox_color, 2)
+
+        cv2.imwrite('exps/exp1/test' + str(index) + '.jpg', image)
+        index += 1
+        '''
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
@@ -75,7 +116,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(grad_norm=grad_total_norm)
 
         # samples, ref_samples, targets = prefetcher.next()
-        samples, targets = prefetcher.next()
+        #samples, targets = prefetcher.next()
         # print("targets", targets)
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
@@ -168,3 +209,8 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         stats['PQ_th'] = panoptic_res["Things"]
         stats['PQ_st'] = panoptic_res["Stuff"]
     return stats, coco_evaluator
+
+def inverse_normalize(tensor, mean, std):
+    for t, m, s in zip(tensor, mean, std):
+        t.mul_(s).add_(m)
+    return tensor
