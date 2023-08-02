@@ -19,6 +19,6 @@ python -u main.py \
     --num_workers 8 \
     --with_box_refine \
     --dataset_file 'coco' \
-    --coco_path '/content/drive/MyDrive/YOLOv5 (1)/datasets/Trans_VOD_Lite_Worms/' \
+    --coco_path '/content/drive/MyDrive/YOLOv5 (1)/datasets/Worms_NAP_v2/' \
     --output_dir ${EXP_DIR} \
     ${PY_ARGS} 2>&1 | tee ${EXP_DIR}/log.train.$T
