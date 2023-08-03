@@ -194,6 +194,19 @@ def main(args):
                                  drop_last=False, collate_fn=utils.collate_fn, num_workers=args.num_workers,
                                  pin_memory=True)
 
+    '''
+    def mean_std(loader):
+        images, lebels = next(iter(loader))
+        # shape of images = [b,c,w,h]
+        mean, std = images.mean([0,2,3]), images.std([0,2,3])
+        return mean, std
+
+    mean, std = mean_std(data_loader_train)
+    print("mean and std: \n", mean, std)
+    mean, std = mean_std(data_loader_val)
+    print("mean and std: \n", mean, std)
+    '''
+
     # lr_backbone_names = ["backbone.0", "backbone.neck", "input_proj", "transformer.encoder"]
     def match_name_keywords(n, name_keywords):
         out = False

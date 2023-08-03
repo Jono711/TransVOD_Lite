@@ -47,9 +47,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         '''
-        print(targets)
-        print(samples)
-        print(samples.tensors[0].shape)
+        #print(targets)
+        #print(samples)
+        #print(samples.tensors[0].shape)
         
         image = inverse_normalize(samples.tensors[0], (0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
         #image = samples.tensors[0]
@@ -58,8 +58,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         image = image * 255
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         #image = cv2.imread(image)
-        print(image)
-        print(type(image))
+        #print(image)
+        #print(type(image))
         (h, w) = image.shape[:2]
         bboxes = targets[0]["boxes"]
         for j in range(bboxes.shape[0]):
@@ -145,9 +145,42 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             output_dir=os.path.join(output_dir, "panoptic_eval"),
         )
 
+    index = 0
     for samples, targets in metric_logger.log_every(data_loader, 10, header):
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        '''
+        image = inverse_normalize(samples.tensors[0], (0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        #image = samples.tensors[0]
+        image = image.permute(1, 2, 0)
+        image = image.cpu().numpy()
+        image = image * 255
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.imread(image)
+        #print(image)
+        #print(type(image))
+        (h, w) = image.shape[:2]
+        bboxes = targets[0]["boxes"]
+        for j in range(bboxes.shape[0]):
+            obj_class = targets[0]["labels"][j]
+            if obj_class == 1:
+              pred_bbox_color = (0,0,255)
+            elif obj_class == 2:
+              pred_bbox_color = (0,0,0)
+            else:
+              pred_bbox_color = (255,255,255)
+            
+            bbox = bboxes[j]
+            bbox_xyxy = box_ops.box_cxcywh_to_xyxy(bbox * torch.tensor([w,h,w,h], dtype=torch.float32).to(device))
+            
+            start_pt = (int(bbox_xyxy[0]), int(bbox_xyxy[1]))
+            end_pt = (int(bbox_xyxy[2]), int(bbox_xyxy[3]))
+            image = cv2.rectangle(image, start_pt, end_pt, pred_bbox_color, 2)
+
+        cv2.imwrite('exps/exp1/test' + str(index) + '.jpg', image)
+        index += 1
+        '''
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
