@@ -18,7 +18,7 @@ python -u eval_videos.py \
     --num_workers 8 \
     --with_box_refine \
     --dataset_file 'coco_multi_eval' \
-    --coco_path '/content/drive/MyDrive/YOLOv5 (1)/datasets/Worms_NAP_v2/' \
+    --coco_path '/content/drive/MyDrive/YOLOv5 (1)/datasets/Worms_NAP_v3/' \
     --resume '/content/drive/MyDrive/TransVOD/TransVODweights.pth' \
     --output_dir ${EXP_DIR} \
     ${PY_ARGS} 2>&1 | tee ${EXP_DIR}/log.eval.$T.txt
